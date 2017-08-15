@@ -8,14 +8,21 @@
 
 #import <UIKit/UIKit.h>
 
+@class TempFlowLayout;
+
 @protocol TempFlowDelegate <NSObject>
 
-- (NSArray<NSIndexPath *> *)indexPathsWithIsCurrent:(BOOL)isCurrent;
+- (CGFloat)layout:(TempFlowLayout *)layout previousEdgeLengthForItemAtIndexPath:(NSIndexPath *)indexPath scrollDirection:(UICollectionViewScrollDirection)scrollDirection;
+
+- (CGFloat)layout:(TempFlowLayout *)layout lastEdgeLengthForItemAtIndexPath:(NSIndexPath *)indexPath scrollDirection:(UICollectionViewScrollDirection)scrollDirection;
 
 @end
 
 @interface TempFlowLayout : UICollectionViewFlowLayout
 
 @property (nonatomic, weak) id<TempFlowDelegate> delegate;
+
+@property (nonatomic, assign) NSUInteger itemPadding;
+@property (nonatomic, assign) NSUInteger numberInRow;
 
 @end

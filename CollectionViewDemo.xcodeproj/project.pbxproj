@@ -147,7 +147,7 @@
 				TargetAttributes = {
 					6EA04A971F3D825F0063A8B0 = {
 						CreatedOnToolsVersion = 8.3.3;
-						DevelopmentTeam = 7KD22EQFBB;
+						DevelopmentTeam = U9A4TD7GB4;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -366,7 +366,7 @@
 			baseConfigurationReference = F70CA9815A6B47EFCD204775 /* Pods-CollectionViewDemo.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				DEVELOPMENT_TEAM = 7KD22EQFBB;
+				DEVELOPMENT_TEAM = U9A4TD7GB4;
 				INFOPLIST_FILE = CollectionViewDemo/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
@@ -380,7 +380,7 @@
 			baseConfigurationReference = 239B8FCFC2B48475A1E15262 /* Pods-CollectionViewDemo.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				DEVELOPMENT_TEAM = 7KD22EQFBB;
+				DEVELOPMENT_TEAM = U9A4TD7GB4;
 				INFOPLIST_FILE = CollectionViewDemo/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
@@ -408,6 +408,7 @@
 				6EA04AB11F3D825F0063A8B0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

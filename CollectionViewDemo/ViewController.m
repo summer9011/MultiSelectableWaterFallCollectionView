@@ -15,10 +15,12 @@
 @property (nonatomic, strong) UICollectionView *collectionView;
 @property (nonatomic, strong) TempFlowLayout *flowLayout;
 
-@property (nonatomic, strong) NSArray<NSArray<UIColor *> *> *dataArr;
+@property (nonatomic, strong) NSMutableArray<NSMutableArray<NSArray<UIColor *> *> *> *dataArr;
+@property (nonatomic, assign) NSUInteger sectionNumber;
+@property (nonatomic, assign) NSUInteger itemNumber;
 
-@property (nonatomic, strong) NSMutableArray<NSIndexPath *> *prevSelectedIndexPathArr;
-@property (nonatomic, strong) NSMutableArray<NSIndexPath *> *currentSelectedIndexPathArr;
+@property (nonatomic, strong) NSMutableArray<NSIndexPath *> *previousSelectedIndexPathArr;
+@property (nonatomic, strong) NSMutableArray<NSIndexPath *> *lastSelectedIndexPathArr;
 
 @end
 
@@ -30,53 +32,31 @@
     
     self.view.backgroundColor = [UIColor colorWithRed:250/255.f green:250/255.f blue:250/255.f alpha:1.f];
     
-    self.prevSelectedIndexPathArr = [NSMutableArray array];
-    self.currentSelectedIndexPathArr = [NSMutableArray array];
+    self.previousSelectedIndexPathArr = [NSMutableArray array];
+    self.lastSelectedIndexPathArr = [NSMutableArray array];
     
-    self.dataArr = @[
-                     @[
-                         [UIColor whiteColor],
-                         [UIColor darkGrayColor]
-                         ],
-                     @[
-                         [UIColor whiteColor],
-                         [UIColor darkGrayColor]
-                         ],
-                     @[
-                         [UIColor whiteColor],
-                         [UIColor darkGrayColor]
-                         ],
-                     @[
-                         [UIColor whiteColor],
-                         [UIColor darkGrayColor]
-                         ],
-                     @[
-                         [UIColor whiteColor],
-                         [UIColor darkGrayColor]
-                         ],
-                     @[
-                         [UIColor whiteColor],
-                         [UIColor darkGrayColor]
-                         ],
-                     @[
-                         [UIColor whiteColor],
-                         [UIColor darkGrayColor]
-                         ],
-                     @[
-                         [UIColor whiteColor],
-                         [UIColor darkGrayColor]
-                         ],
-                     @[
-                         [UIColor whiteColor],
-                         [UIColor darkGrayColor]
-                         ],
-                     @[
-                         [UIColor whiteColor],
-                         [UIColor darkGrayColor]
-                         ]
-                     ];
+    self.sectionNumber = 1;
+    self.itemNumber = 22;
+    
+    self.dataArr = [NSMutableArray array];
+    for (NSInteger section = 0; section < self.sectionNumber; section ++) {
+        NSMutableArray<NSArray<UIColor *> *> *items = [NSMutableArray array];
+        
+        for (NSInteger item = 0; item < self.itemNumber; item ++) {
+            NSArray *colors = @[
+                                [UIColor whiteColor],
+                                [UIColor darkGrayColor]
+                                ];
+            [items addObject:colors];
+        }
+        
+        [self.dataArr addObject:items];
+    }
     
     TempFlowLayout *flowLayout = [[TempFlowLayout alloc] init];
+    flowLayout.scrollDirection = UICollectionViewScrollDirectionVertical;
+    flowLayout.itemPadding = 10;
+    flowLayout.numberInRow = 3;
     flowLayout.delegate = self;
     
     self.collectionView = [[UICollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:flowLayout];
@@ -86,6 +66,8 @@
     [self.view addSubview:self.collectionView];
     
     [self.collectionView registerClass:[TempCell class] forCellWithReuseIdentifier:TempCellIdentifier];
+//    [self.collectionView registerClass:[UICollectionReusableView class] forSupplementaryViewOfKind:UICollectionElementKindSectionHeader withReuseIdentifier:@"SectionView"];
+//    [self.collectionView registerClass:[UICollectionReusableView class] forSupplementaryViewOfKind:UICollectionElementKindSectionFooter withReuseIdentifier:@"SectionView"];
     
     [self.collectionView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.top.equalTo(self.view).offset(40);
@@ -103,47 +85,71 @@
 #pragma mark - UICollectionViewDataSource
 
 - (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView {
-    return 1;
+    return self.dataArr.count;
 }
 
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
-    return self.dataArr.count;
+    return self.dataArr[section].count;
 }
 
 - (TempCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
     TempCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:TempCellIdentifier forIndexPath:indexPath];
     
-    NSArray<UIColor *> *colors = self.dataArr[indexPath.item];
+    NSArray<UIColor *> *colors = self.dataArr[indexPath.section][indexPath.item];
     cell.firstColor = colors[0];
     cell.secondColor = colors[1];
     
     return cell;
 }
 
-#pragma mark - UICollectionViewDelegate
-
-- (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
-    self.prevSelectedIndexPathArr = [self.currentSelectedIndexPathArr mutableCopy];
-    
-    if ([self.currentSelectedIndexPathArr containsObject:indexPath]) {
-        [self.currentSelectedIndexPathArr removeObject:indexPath];
-    } else {
-        [self.currentSelectedIndexPathArr addObject:indexPath];
-    }
-    
-    [self.collectionView reloadSections:[NSIndexSet indexSetWithIndex:0]];
-}
+//- (UICollectionReusableView *)collectionView:(UICollectionView *)collectionView viewForSupplementaryElementOfKind:(NSString *)kind atIndexPath:(NSIndexPath *)indexPath {
+//    UICollectionReusableView *reusableView = [collectionView dequeueReusableSupplementaryViewOfKind:kind withReuseIdentifier:@"SectionView" forIndexPath:indexPath];
+//    reusableView.backgroundColor = [UIColor greenColor];
+//    
+//    return reusableView;
+//}
 
 #pragma mark - UICollectionViewDelegateFlowLayout
 
-- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
-    return [TempCell cellSizeWithIsSelected:[self.currentSelectedIndexPathArr indexOfObject:indexPath] != NSNotFound offsetY:OffsetY];
+//- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout referenceSizeForHeaderInSection:(NSInteger)section {
+//    return CGSizeMake([UIScreen mainScreen].bounds.size.width, 80);
+//}
+//
+//- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout referenceSizeForFooterInSection:(NSInteger)section {
+//    return CGSizeMake([UIScreen mainScreen].bounds.size.width, 50);
+//}
+
+#pragma mark - UICollectionViewDelegate
+
+- (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
+    self.previousSelectedIndexPathArr = [self.lastSelectedIndexPathArr mutableCopy];
+    
+    if ([self.lastSelectedIndexPathArr containsObject:indexPath]) {
+        [self.lastSelectedIndexPathArr removeObject:indexPath];
+    } else {
+        [self.lastSelectedIndexPathArr addObject:indexPath];
+    }
+    
+    [self.collectionView reloadSections:[NSIndexSet indexSetWithIndex:indexPath.section]];
+    [self.collectionView scrollToItemAtIndexPath:indexPath atScrollPosition:UICollectionViewScrollPositionCenteredVertically animated:YES];
 }
 
 #pragma mark - TempFlowDelegate
 
-- (NSArray<NSIndexPath *> *)indexPathsWithIsCurrent:(BOOL)isCurrent {
-    return isCurrent ? self.currentSelectedIndexPathArr:self.prevSelectedIndexPathArr;
+- (CGFloat)layout:(TempFlowLayout *)layout previousEdgeLengthForItemAtIndexPath:(NSIndexPath *)indexPath scrollDirection:(UICollectionViewScrollDirection)scrollDirection {
+    if (scrollDirection == UICollectionViewScrollDirectionVertical) {
+        return [TempCell cellSizeWithIsSelected:[self.previousSelectedIndexPathArr indexOfObject:indexPath] != NSNotFound offsetY:OffsetY].height;
+    }
+    
+    return 0;
+}
+
+- (CGFloat)layout:(TempFlowLayout *)layout lastEdgeLengthForItemAtIndexPath:(NSIndexPath *)indexPath scrollDirection:(UICollectionViewScrollDirection)scrollDirection {
+    if (scrollDirection == UICollectionViewScrollDirectionVertical) {
+        return [TempCell cellSizeWithIsSelected:[self.lastSelectedIndexPathArr indexOfObject:indexPath] != NSNotFound offsetY:OffsetY].height;
+    }
+    
+    return 0;
 }
 
 @end
