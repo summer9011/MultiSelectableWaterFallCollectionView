@@ -7,13 +7,15 @@
 //
 
 #import "ViewController.h"
-#import "TempFlowLayout.h"
 #import "TempCell.h"
+#import "TempSectionView.h"
 
-@interface ViewController () <UICollectionViewDataSource, UICollectionViewDelegate, TempFlowDelegate>
+#import "WaterFallFlowLayout.h"
+
+@interface ViewController () <UICollectionViewDataSource, UICollectionViewDelegate, WaterFallFlowLayoutDelegate>
 
 @property (nonatomic, strong) UICollectionView *collectionView;
-@property (nonatomic, strong) TempFlowLayout *flowLayout;
+@property (nonatomic, strong) WaterFallFlowLayout *flowLayout;
 
 @property (nonatomic, strong) NSMutableArray<NSMutableArray<NSArray<UIColor *> *> *> *dataArr;
 @property (nonatomic, assign) NSUInteger sectionNumber;
@@ -32,6 +34,11 @@
     
     self.view.backgroundColor = [UIColor colorWithRed:250/255.f green:250/255.f blue:250/255.f alpha:1.f];
     
+    [self configDataSource];
+    [self configCollectionView];
+}
+
+- (void)configDataSource {
     self.previousSelectedIndexPathArr = [NSMutableArray array];
     self.lastSelectedIndexPathArr = [NSMutableArray array];
     
@@ -52,12 +59,16 @@
         
         [self.dataArr addObject:items];
     }
-    
-    TempFlowLayout *flowLayout = [[TempFlowLayout alloc] init];
+}
+
+- (void)configCollectionView {
+    WaterFallFlowLayout *flowLayout = [[WaterFallFlowLayout alloc] init];
     flowLayout.scrollDirection = UICollectionViewScrollDirectionVertical;
     flowLayout.itemPadding = 10;
     flowLayout.numberInRow = 3;
     flowLayout.delegate = self;
+    flowLayout.headerReferenceSize = CGSizeMake([UIScreen mainScreen].bounds.size.width, 100);
+    flowLayout.footerReferenceSize = CGSizeMake([UIScreen mainScreen].bounds.size.width, 50);
     
     self.collectionView = [[UICollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:flowLayout];
     self.collectionView.dataSource = self;
@@ -66,8 +77,8 @@
     [self.view addSubview:self.collectionView];
     
     [self.collectionView registerClass:[TempCell class] forCellWithReuseIdentifier:TempCellIdentifier];
-//    [self.collectionView registerClass:[UICollectionReusableView class] forSupplementaryViewOfKind:UICollectionElementKindSectionHeader withReuseIdentifier:@"SectionView"];
-//    [self.collectionView registerClass:[UICollectionReusableView class] forSupplementaryViewOfKind:UICollectionElementKindSectionFooter withReuseIdentifier:@"SectionView"];
+    [self.collectionView registerClass:[TempSectionHeaderView class] forSupplementaryViewOfKind:UICollectionElementKindSectionHeader withReuseIdentifier:TempSectionHeaderIdentifier];
+    [self.collectionView registerClass:[TempSectionFooterView class] forSupplementaryViewOfKind:UICollectionElementKindSectionFooter withReuseIdentifier:TempSectionFooterIdentifier];
     
     [self.collectionView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.top.equalTo(self.view).offset(40);
@@ -75,7 +86,6 @@
         make.leading.trailing.equalTo(self.view);
     }];
 }
-
 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
@@ -102,22 +112,31 @@
     return cell;
 }
 
-//- (UICollectionReusableView *)collectionView:(UICollectionView *)collectionView viewForSupplementaryElementOfKind:(NSString *)kind atIndexPath:(NSIndexPath *)indexPath {
-//    UICollectionReusableView *reusableView = [collectionView dequeueReusableSupplementaryViewOfKind:kind withReuseIdentifier:@"SectionView" forIndexPath:indexPath];
-//    reusableView.backgroundColor = [UIColor greenColor];
-//    
-//    return reusableView;
-//}
+- (UICollectionReusableView *)collectionView:(UICollectionView *)collectionView viewForSupplementaryElementOfKind:(NSString *)kind atIndexPath:(NSIndexPath *)indexPath {
+    if ([kind isEqualToString:UICollectionElementKindSectionHeader]) {
+        TempSectionHeaderView *view = [collectionView dequeueReusableSupplementaryViewOfKind:kind withReuseIdentifier:TempSectionHeaderIdentifier forIndexPath:indexPath];
+        view.color = [UIColor blueColor];
+        return view;
+    } else if ([kind isEqualToString:UICollectionElementKindSectionFooter]) {
+        TempSectionFooterView *view = [collectionView dequeueReusableSupplementaryViewOfKind:kind withReuseIdentifier:TempSectionFooterIdentifier forIndexPath:indexPath];
+        view.color = [UIColor greenColor];
+        return view;
+    }
+    
+    return nil;
+}
 
 #pragma mark - UICollectionViewDelegateFlowLayout
 
-//- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout referenceSizeForHeaderInSection:(NSInteger)section {
-//    return CGSizeMake([UIScreen mainScreen].bounds.size.width, 80);
-//}
-//
-//- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout referenceSizeForFooterInSection:(NSInteger)section {
-//    return CGSizeMake([UIScreen mainScreen].bounds.size.width, 50);
-//}
+/*
+- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout referenceSizeForHeaderInSection:(NSInteger)section {
+    return CGSizeMake([UIScreen mainScreen].bounds.size.width, 100);
+}
+
+- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout referenceSizeForFooterInSection:(NSInteger)section {
+    return CGSizeMake([UIScreen mainScreen].bounds.size.width, 50);
+}
+*/
 
 #pragma mark - UICollectionViewDelegate
 
@@ -134,9 +153,9 @@
     [self.collectionView scrollToItemAtIndexPath:indexPath atScrollPosition:UICollectionViewScrollPositionCenteredVertically animated:YES];
 }
 
-#pragma mark - TempFlowDelegate
+#pragma mark - WaterFallFlowLayoutDelegate
 
-- (CGFloat)layout:(TempFlowLayout *)layout previousEdgeLengthForItemAtIndexPath:(NSIndexPath *)indexPath scrollDirection:(UICollectionViewScrollDirection)scrollDirection {
+- (CGFloat)layout:(WaterFallFlowLayout *)layout previousEdgeLengthForItemAtIndexPath:(NSIndexPath *)indexPath scrollDirection:(UICollectionViewScrollDirection)scrollDirection {
     if (scrollDirection == UICollectionViewScrollDirectionVertical) {
         return [TempCell cellSizeWithIsSelected:[self.previousSelectedIndexPathArr indexOfObject:indexPath] != NSNotFound offsetY:OffsetY].height;
     }
@@ -144,7 +163,7 @@
     return 0;
 }
 
-- (CGFloat)layout:(TempFlowLayout *)layout lastEdgeLengthForItemAtIndexPath:(NSIndexPath *)indexPath scrollDirection:(UICollectionViewScrollDirection)scrollDirection {
+- (CGFloat)layout:(WaterFallFlowLayout *)layout lastEdgeLengthForItemAtIndexPath:(NSIndexPath *)indexPath scrollDirection:(UICollectionViewScrollDirection)scrollDirection {
     if (scrollDirection == UICollectionViewScrollDirectionVertical) {
         return [TempCell cellSizeWithIsSelected:[self.lastSelectedIndexPathArr indexOfObject:indexPath] != NSNotFound offsetY:OffsetY].height;
     }
