@@ -15,6 +15,7 @@ extern NSString *const TempCellIdentifier;
 
 @interface TempCell : UICollectionViewCell
 
+@property (nonatomic, copy) NSIndexPath *indexPath;
 @property (nonatomic, copy) UIColor *firstColor;
 @property (nonatomic, copy) UIColor *secondColor;
 

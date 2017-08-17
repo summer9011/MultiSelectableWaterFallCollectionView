@@ -35,6 +35,7 @@
     self.view.backgroundColor = [UIColor colorWithRed:250/255.f green:250/255.f blue:250/255.f alpha:1.f];
     
     [self configDataSource];
+    [self configOperationView];
     [self configCollectionView];
 }
 
@@ -61,6 +62,16 @@
     }
 }
 
+- (void)configOperationView {
+    UIToolbar *toolbar = [[UIToolbar alloc] initWithFrame:CGRectZero];
+    [self.view addSubview:toolbar];
+    
+    [toolbar mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.leading.trailing.bottom.equalTo(self.view);
+        make.height.mas_equalTo(44);
+    }];
+}
+
 - (void)configCollectionView {
     WaterFallFlowLayout *flowLayout = [[WaterFallFlowLayout alloc] init];
     flowLayout.scrollDirection = UICollectionViewScrollDirectionVertical;
@@ -81,9 +92,8 @@
     [self.collectionView registerClass:[TempSectionFooterView class] forSupplementaryViewOfKind:UICollectionElementKindSectionFooter withReuseIdentifier:TempSectionFooterIdentifier];
     
     [self.collectionView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.view).offset(40);
-        make.bottom.equalTo(self.view).offset(-40);
-        make.leading.trailing.equalTo(self.view);
+        make.top.leading.trailing.equalTo(self.view);
+        make.bottom.equalTo(self.view).offset(-44);
     }];
 }
 
@@ -108,11 +118,12 @@
     NSArray<UIColor *> *colors = self.dataArr[indexPath.section][indexPath.item];
     cell.firstColor = colors[0];
     cell.secondColor = colors[1];
+    cell.indexPath = indexPath;
     
     return cell;
 }
 
-- (UICollectionReusableView *)collectionView:(UICollectionView *)collectionView viewForSupplementaryElementOfKind:(NSString *)kind atIndexPath:(NSIndexPath *)indexPath {
+- (TempSectionView *)collectionView:(UICollectionView *)collectionView viewForSupplementaryElementOfKind:(NSString *)kind atIndexPath:(NSIndexPath *)indexPath {
     if ([kind isEqualToString:UICollectionElementKindSectionHeader]) {
         TempSectionHeaderView *view = [collectionView dequeueReusableSupplementaryViewOfKind:kind withReuseIdentifier:TempSectionHeaderIdentifier forIndexPath:indexPath];
         view.color = [UIColor blueColor];

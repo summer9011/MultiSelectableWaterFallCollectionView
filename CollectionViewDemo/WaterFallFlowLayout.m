@@ -10,8 +10,10 @@
 
 @interface WaterFallFlowLayout ()
 
-@property (nonatomic, strong) NSMutableDictionary<NSIndexPath *, UICollectionViewLayoutAttributes *> *supplementaryViewAttrDic;
-@property (nonatomic, strong) NSMutableDictionary<NSIndexPath *, UICollectionViewLayoutAttributes *> *attrDic;
+@property (nonatomic, strong) NSMutableDictionary<NSIndexPath *, UICollectionViewLayoutAttributes *> *sectionHeaderLastAttrDic;
+@property (nonatomic, strong) NSMutableDictionary<NSIndexPath *, UICollectionViewLayoutAttributes *> *sectionFooterLastAttrDic;
+
+@property (nonatomic, strong) NSMutableDictionary<NSIndexPath *, UICollectionViewLayoutAttributes *> *cellLastAttrDic;
 
 @end
 
@@ -22,27 +24,32 @@
 - (void)prepareLayout {
     [super prepareLayout];
     
-    self.supplementaryViewAttrDic = [NSMutableDictionary dictionary];
-    self.attrDic = [NSMutableDictionary dictionary];
+    NSLog(@"prepareLayout");
+    
+    self.sectionHeaderLastAttrDic = [NSMutableDictionary dictionary];
+    self.sectionFooterLastAttrDic = [NSMutableDictionary dictionary];
+    self.cellLastAttrDic = [NSMutableDictionary dictionary];
     
     for (NSInteger section = 0; section < [self.collectionView numberOfSections]; section ++) {
-        NSIndexPath *sectionPath = [NSIndexPath indexPathWithIndex:section];
-        
-        UICollectionViewLayoutAttributes *sectionHeader = [self layoutAttributesForSupplementaryViewOfKind:UICollectionElementKindSectionHeader atIndexPath:sectionPath];
-        [self.supplementaryViewAttrDic setObject:sectionHeader forKey:sectionPath];
-        
         for (NSInteger item = 0; item < [self.collectionView numberOfItemsInSection:section]; item ++) {
             NSIndexPath *indexPath = [NSIndexPath indexPathForItem:item inSection:section];
             UICollectionViewLayoutAttributes *attr = [self layoutAttributesForItemAtIndexPath:indexPath];
-            [self.attrDic setObject:attr forKey:indexPath];
+            [self.cellLastAttrDic setObject:attr forKey:indexPath];
         }
         
+        NSIndexPath *sectionPath = [NSIndexPath indexPathWithIndex:section];
+        
+        UICollectionViewLayoutAttributes *sectionHeader = [self layoutAttributesForSupplementaryViewOfKind:UICollectionElementKindSectionHeader atIndexPath:sectionPath];
+        [self.sectionHeaderLastAttrDic setObject:sectionHeader forKey:sectionPath];
+        
         UICollectionViewLayoutAttributes *sectionFooter = [self layoutAttributesForSupplementaryViewOfKind:UICollectionElementKindSectionFooter atIndexPath:sectionPath];
-        [self.supplementaryViewAttrDic setObject:sectionFooter forKey:sectionPath];
+        [self.sectionFooterLastAttrDic setObject:sectionFooter forKey:sectionPath];
     }
 }
 
 - (CGSize)collectionViewContentSize {
+    NSLog(@"collectionViewContentSize");
+    
     if ([self.collectionView numberOfSections] > 0) {
         NSUInteger itemCount = 0;
         for (NSInteger section = 0; section < [self.collectionView numberOfSections]; section ++) {
@@ -57,7 +64,16 @@
             }
             
             for (NSInteger section = 0; section < [self.collectionView numberOfSections]; section ++) {
-                CGSize sectionHeaderSize = [self sectionHeaderSizeWithSection:section];
+                NSIndexPath *sectionPath = [NSIndexPath indexPathWithIndex:section];
+                
+                CGSize sectionHeaderSize = CGSizeZero;
+                if (self.sectionHeaderLastAttrDic[sectionPath]) {
+                    UICollectionViewLayoutAttributes *attr = self.sectionHeaderLastAttrDic[sectionPath];
+                    sectionHeaderSize = attr.frame.size;
+                } else {
+                    sectionHeaderSize = [self sectionHeaderSizeWithSection:section];
+                }
+                
                 if (self.scrollDirection == UICollectionViewScrollDirectionVertical) {
                     contentSize.height += sectionHeaderSize.height;
                 } else {
@@ -73,10 +89,10 @@
                     NSUInteger postion = item%self.numberInRow;
                     
                     NSIndexPath *indexPath = [NSIndexPath indexPathForItem:item inSection:section];
-                    CGFloat edgeLength = [self.delegate layout:self lastEdgeLengthForItemAtIndexPath:indexPath scrollDirection:self.scrollDirection];
+                    UICollectionViewLayoutAttributes *attr = self.cellLastAttrDic[indexPath];
                     
                     CGFloat rowLength = [rowLengthArr[postion] integerValue];
-                    rowLength += (edgeLength + self.itemPadding);
+                    rowLength += (CGRectGetHeight(attr.frame) + self.itemPadding);
                     [rowLengthArr replaceObjectAtIndex:postion withObject:@(rowLength)];
                 }
                 
@@ -87,7 +103,14 @@
                     contentSize.width += maxLength;
                 }
                 
-                CGSize sectionFooterSize = [self sectionFooterSizeWithSection:section];
+                CGSize sectionFooterSize = CGSizeZero;
+                if (self.sectionFooterLastAttrDic[sectionPath]) {
+                    UICollectionViewLayoutAttributes *attr = self.sectionFooterLastAttrDic[sectionPath];
+                    sectionFooterSize = attr.frame.size;
+                } else {
+                    sectionFooterSize = [self sectionFooterSizeWithSection:section];
+                }
+                
                 if (self.scrollDirection == UICollectionViewScrollDirectionVertical) {
                     contentSize.height += sectionFooterSize.height;
                 } else {
@@ -107,15 +130,22 @@
 - (nullable NSArray<__kindof UICollectionViewLayoutAttributes *> *)layoutAttributesForElementsInRect:(CGRect)rect {
     NSMutableArray<UICollectionViewLayoutAttributes *> *attrArr = [NSMutableArray array];
     
-    for (NSIndexPath *sectionPath in self.supplementaryViewAttrDic) {
-        UICollectionViewLayoutAttributes *attr = self.supplementaryViewAttrDic[sectionPath];
+    for (NSIndexPath *sectionPath in self.sectionHeaderLastAttrDic) {
+        UICollectionViewLayoutAttributes *attr = self.sectionHeaderLastAttrDic[sectionPath];
         if (CGRectIntersectsRect(attr.frame, rect)) {
             [attrArr addObject:attr];
         }
     }
     
-    for (NSIndexPath *indexPath in self.attrDic) {
-        UICollectionViewLayoutAttributes *attr = self.attrDic[indexPath];
+    for (NSIndexPath *indexPath in self.cellLastAttrDic) {
+        UICollectionViewLayoutAttributes *attr = self.cellLastAttrDic[indexPath];
+        if (CGRectIntersectsRect(attr.frame, rect)) {
+            [attrArr addObject:attr];
+        }
+    }
+    
+    for (NSIndexPath *sectionPath in self.sectionFooterLastAttrDic) {
+        UICollectionViewLayoutAttributes *attr = self.sectionFooterLastAttrDic[sectionPath];
         if (CGRectIntersectsRect(attr.frame, rect)) {
             [attrArr addObject:attr];
         }
@@ -126,14 +156,16 @@
 
 - (nullable UICollectionViewLayoutAttributes *)layoutAttributesForItemAtIndexPath:(NSIndexPath *)indexPath {
     UICollectionViewLayoutAttributes *attr = [UICollectionViewLayoutAttributes layoutAttributesForCellWithIndexPath:indexPath];
-    attr.frame = [self lastFrameWithIndexPath:indexPath];
+    attr.alpha = 1.f;
+    attr.frame = [self cellFrameWithIndexPath:indexPath isLast:YES];
     
     return attr;
 }
 
 - (nullable UICollectionViewLayoutAttributes *)layoutAttributesForSupplementaryViewOfKind:(NSString *)elementKind atIndexPath:(NSIndexPath *)indexPath {
     UICollectionViewLayoutAttributes *attr = [UICollectionViewLayoutAttributes layoutAttributesForSupplementaryViewOfKind:elementKind withIndexPath:indexPath];
-    attr.frame = [self sectionFrameWithSupplementaryViewOfKind:elementKind indexPath:indexPath];
+    attr.alpha = 1.f;
+    attr.frame = [self sectionFrameWithSupplementaryViewOfKind:elementKind indexPath:indexPath isLast:YES];
     
     return attr;
 }
@@ -147,66 +179,34 @@
 - (nullable UICollectionViewLayoutAttributes *)initialLayoutAttributesForAppearingItemAtIndexPath:(NSIndexPath *)itemIndexPath {
     UICollectionViewLayoutAttributes *attr = [super initialLayoutAttributesForAppearingItemAtIndexPath:itemIndexPath];
     attr.alpha = 1.f;
-    attr.frame = [self previousFrameWithIndexPath:itemIndexPath];
+    attr.frame = [self cellFrameWithIndexPath:itemIndexPath isLast:NO];
     return attr;
 }
 
 - (nullable UICollectionViewLayoutAttributes *)finalLayoutAttributesForDisappearingItemAtIndexPath:(NSIndexPath *)itemIndexPath {
-    UICollectionViewLayoutAttributes *attr = [super finalLayoutAttributesForDisappearingItemAtIndexPath:itemIndexPath];
-    attr.alpha = 1.f;
-    attr.frame = [self lastFrameWithIndexPath:itemIndexPath];
-    return attr;
+    return self.cellLastAttrDic[itemIndexPath];
 }
 
 - (nullable UICollectionViewLayoutAttributes *)initialLayoutAttributesForAppearingSupplementaryElementOfKind:(NSString *)elementKind atIndexPath:(NSIndexPath *)elementIndexPath {
     UICollectionViewLayoutAttributes *attr = [super initialLayoutAttributesForAppearingSupplementaryElementOfKind:elementKind atIndexPath:elementIndexPath];
     attr.alpha = 1.f;
+    attr.frame = [self sectionFrameWithSupplementaryViewOfKind:elementKind indexPath:elementIndexPath isLast:NO];
     return attr;
 }
 
 - (nullable UICollectionViewLayoutAttributes *)finalLayoutAttributesForDisappearingSupplementaryElementOfKind:(NSString *)elementKind atIndexPath:(NSIndexPath *)elementIndexPath {
-    UICollectionViewLayoutAttributes *attr = [super finalLayoutAttributesForDisappearingSupplementaryElementOfKind:elementKind atIndexPath:elementIndexPath];
-    attr.alpha = 1.f;
-    return attr;
+    if ([elementKind isEqualToString:UICollectionElementKindSectionHeader]) {
+        return self.sectionHeaderLastAttrDic[elementIndexPath];
+    } else if ([elementKind isEqualToString:UICollectionElementKindSectionFooter]) {
+        return self.sectionFooterLastAttrDic[elementIndexPath];
+    }
+    
+    return nil;
 }
 
 #pragma mark - Private Method
 
-- (CGRect)previousFrameWithIndexPath:(NSIndexPath *)indexPath {
-    return [self frameWithIndexPath:indexPath isLast:NO];
-}
-
-- (CGRect)lastFrameWithIndexPath:(NSIndexPath *)indexPath {
-    return [self frameWithIndexPath:indexPath isLast:YES];
-}
-
-- (CGSize)sectionHeaderSizeWithSection:(NSUInteger)section {
-    CGSize size = CGSizeZero;
-    
-    id <UICollectionViewDelegateFlowLayout> flowLayoutDelegate = (id <UICollectionViewDelegateFlowLayout>)self.collectionView.delegate;
-    if (flowLayoutDelegate && [flowLayoutDelegate respondsToSelector:@selector(collectionView:layout:referenceSizeForHeaderInSection:)]) {
-        size = [flowLayoutDelegate collectionView:self.collectionView layout:self referenceSizeForHeaderInSection:section];
-    } else {
-        size = self.headerReferenceSize;
-    }
-    
-    return size;
-}
-
-- (CGSize)sectionFooterSizeWithSection:(NSUInteger)section {
-    CGSize size = CGSizeZero;
-    
-    id <UICollectionViewDelegateFlowLayout> flowLayoutDelegate = (id <UICollectionViewDelegateFlowLayout>)self.collectionView.delegate;
-    if (flowLayoutDelegate && [flowLayoutDelegate respondsToSelector:@selector(collectionView:layout:referenceSizeForFooterInSection:)]) {
-        size = [flowLayoutDelegate collectionView:self.collectionView layout:self referenceSizeForFooterInSection:section];
-    } else {
-        size = self.footerReferenceSize;
-    }
-    
-    return size;
-}
-
-- (CGRect)frameWithIndexPath:(NSIndexPath *)indexPath isLast:(BOOL)isLast {
+- (CGRect)cellFrameWithIndexPath:(NSIndexPath *)indexPath isLast:(BOOL)isLast {
     CGRect itemFrame = CGRectZero;
     if (self.scrollDirection == UICollectionViewScrollDirectionVertical) {
         itemFrame.size.width = floorf((CGRectGetWidth(self.collectionView.frame) - self.itemPadding * (self.numberInRow + 1))/(CGFloat)self.numberInRow);
@@ -280,9 +280,45 @@
     return itemFrame;
 }
 
-- (CGRect)sectionFrameWithSupplementaryViewOfKind:(NSString *)elementKind indexPath:(NSIndexPath *)indexPath {
-    CGSize size = [self sectionHeaderSizeWithSection:indexPath.section];
-    return CGRectMake(0, 0, size.width, size.height);
+- (CGSize)sectionHeaderSizeWithSection:(NSUInteger)section {
+    CGSize size = CGSizeZero;
+    
+    id <UICollectionViewDelegateFlowLayout> flowLayoutDelegate = (id <UICollectionViewDelegateFlowLayout>)self.collectionView.delegate;
+    if (flowLayoutDelegate && [flowLayoutDelegate respondsToSelector:@selector(collectionView:layout:referenceSizeForHeaderInSection:)]) {
+        size = [flowLayoutDelegate collectionView:self.collectionView layout:self referenceSizeForHeaderInSection:section];
+    } else {
+        size = self.headerReferenceSize;
+    }
+    
+    return size;
+}
+
+- (CGSize)sectionFooterSizeWithSection:(NSUInteger)section {
+    CGSize size = CGSizeZero;
+    
+    id <UICollectionViewDelegateFlowLayout> flowLayoutDelegate = (id <UICollectionViewDelegateFlowLayout>)self.collectionView.delegate;
+    if (flowLayoutDelegate && [flowLayoutDelegate respondsToSelector:@selector(collectionView:layout:referenceSizeForFooterInSection:)]) {
+        size = [flowLayoutDelegate collectionView:self.collectionView layout:self referenceSizeForFooterInSection:section];
+    } else {
+        size = self.footerReferenceSize;
+    }
+    
+    return size;
+}
+
+- (CGRect)sectionFrameWithSupplementaryViewOfKind:(NSString *)elementKind indexPath:(NSIndexPath *)indexPath isLast:(BOOL)isLast {
+    if ([elementKind isEqualToString:UICollectionElementKindSectionHeader]) {
+        CGSize size = [self sectionHeaderSizeWithSection:indexPath.section];
+        
+        return CGRectMake(0, 0, size.width, size.height);
+        
+    } else if ([elementKind isEqualToString:UICollectionElementKindSectionFooter]) {
+        CGSize size = [self sectionFooterSizeWithSection:indexPath.section];
+        
+        return CGRectMake(0, 0, size.width, size.height);
+    }
+    
+    return CGRectZero;
 }
 
 @end
