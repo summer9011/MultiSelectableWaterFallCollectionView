@@ -11,6 +11,7 @@
 @interface TempSectionView : UICollectionReusableView
 
 @property (nonatomic, copy) UIColor *color;
+@property (nonatomic, copy) NSIndexPath *indexPath;
 
 @end
 

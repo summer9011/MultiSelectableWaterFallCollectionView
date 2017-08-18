@@ -24,6 +24,8 @@
 @property (nonatomic, strong) NSMutableArray<NSIndexPath *> *previousSelectedIndexPathArr;
 @property (nonatomic, strong) NSMutableArray<NSIndexPath *> *lastSelectedIndexPathArr;
 
+@property (nonatomic, strong) UISegmentedControl *numberControl;
+
 @end
 
 @implementation ViewController
@@ -32,19 +34,20 @@
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
     
-    self.view.backgroundColor = [UIColor colorWithRed:250/255.f green:250/255.f blue:250/255.f alpha:1.f];
+    self.view.backgroundColor = [UIColor whiteColor];
     
     [self configDataSource];
     [self configOperationView];
     [self configCollectionView];
+    [self resetControl];
 }
 
 - (void)configDataSource {
     self.previousSelectedIndexPathArr = [NSMutableArray array];
     self.lastSelectedIndexPathArr = [NSMutableArray array];
     
-    self.sectionNumber = 1;
-    self.itemNumber = 22;
+    self.sectionNumber = 5;
+    self.itemNumber = 7;
     
     self.dataArr = [NSMutableArray array];
     for (NSInteger section = 0; section < self.sectionNumber; section ++) {
@@ -70,21 +73,39 @@
         make.leading.trailing.bottom.equalTo(self.view);
         make.height.mas_equalTo(44);
     }];
+    
+    UIBarButtonItem *fixable1 = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
+    
+    NSArray *numberItems = @[
+                             @"One",
+                             @"Two",
+                             @"Three",
+                             @"Four"
+                             ];
+    UISegmentedControl *numberControl = [[UISegmentedControl alloc] initWithItems:numberItems];
+    [numberControl addTarget:self action:@selector(numberSegmentChanged:) forControlEvents:UIControlEventValueChanged];
+    UIBarButtonItem *numberItem = [[UIBarButtonItem alloc] initWithCustomView:numberControl];
+    
+    UIBarButtonItem *fixable2 = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
+    
+    toolbar.items = @[fixable1, numberItem, fixable2];
+    
+    self.numberControl = numberControl;
 }
 
 - (void)configCollectionView {
     WaterFallFlowLayout *flowLayout = [[WaterFallFlowLayout alloc] init];
-    flowLayout.scrollDirection = UICollectionViewScrollDirectionVertical;
-    flowLayout.itemPadding = 10;
-    flowLayout.numberInRow = 3;
+    flowLayout.itemPadding = 4;
+    flowLayout.numberInRow = 2;
     flowLayout.delegate = self;
     flowLayout.headerReferenceSize = CGSizeMake([UIScreen mainScreen].bounds.size.width, 100);
     flowLayout.footerReferenceSize = CGSizeMake([UIScreen mainScreen].bounds.size.width, 50);
     
     self.collectionView = [[UICollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:flowLayout];
+    self.collectionView.backgroundColor = [UIColor lightGrayColor];
     self.collectionView.dataSource = self;
     self.collectionView.delegate = self;
-    self.collectionView.backgroundColor = [UIColor lightGrayColor];
+    self.collectionView.contentInset = UIEdgeInsetsMake(50, 0, 50, 0);
     [self.view addSubview:self.collectionView];
     
     [self.collectionView registerClass:[TempCell class] forCellWithReuseIdentifier:TempCellIdentifier];
@@ -100,6 +121,22 @@
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
+}
+
+#pragma mark - UIControl Event
+
+- (void)resetControl {
+    WaterFallFlowLayout *layout = (WaterFallFlowLayout *)self.collectionView.collectionViewLayout;
+    [self.numberControl setSelectedSegmentIndex:(layout.numberInRow - 1)];
+}
+
+- (void)numberSegmentChanged:(UISegmentedControl *)control {
+    WaterFallFlowLayout *layout = (WaterFallFlowLayout *)self.collectionView.collectionViewLayout;
+    layout.numberInRow = (control.selectedSegmentIndex + 1);
+    
+    [self.collectionView performBatchUpdates:^{
+        [self.collectionView reloadData];
+    } completion:nil];
 }
 
 #pragma mark - UICollectionViewDataSource
@@ -124,17 +161,17 @@
 }
 
 - (TempSectionView *)collectionView:(UICollectionView *)collectionView viewForSupplementaryElementOfKind:(NSString *)kind atIndexPath:(NSIndexPath *)indexPath {
-    if ([kind isEqualToString:UICollectionElementKindSectionHeader]) {
-        TempSectionHeaderView *view = [collectionView dequeueReusableSupplementaryViewOfKind:kind withReuseIdentifier:TempSectionHeaderIdentifier forIndexPath:indexPath];
-        view.color = [UIColor blueColor];
-        return view;
-    } else if ([kind isEqualToString:UICollectionElementKindSectionFooter]) {
-        TempSectionFooterView *view = [collectionView dequeueReusableSupplementaryViewOfKind:kind withReuseIdentifier:TempSectionFooterIdentifier forIndexPath:indexPath];
-        view.color = [UIColor greenColor];
-        return view;
-    }
+    TempSectionView *view = nil;
     
-    return nil;
+    if ([kind isEqualToString:UICollectionElementKindSectionHeader]) {
+        view = [collectionView dequeueReusableSupplementaryViewOfKind:kind withReuseIdentifier:TempSectionHeaderIdentifier forIndexPath:indexPath];
+    } else if ([kind isEqualToString:UICollectionElementKindSectionFooter]) {
+        view = [collectionView dequeueReusableSupplementaryViewOfKind:kind withReuseIdentifier:TempSectionFooterIdentifier forIndexPath:indexPath];
+    }
+    view.color = [UIColor colorWithWhite:0.4 alpha:1.f];
+    view.indexPath = indexPath;
+    
+    return view;
 }
 
 #pragma mark - UICollectionViewDelegateFlowLayout
@@ -160,26 +197,21 @@
         [self.lastSelectedIndexPathArr addObject:indexPath];
     }
     
-    [self.collectionView reloadSections:[NSIndexSet indexSetWithIndex:indexPath.section]];
-    [self.collectionView scrollToItemAtIndexPath:indexPath atScrollPosition:UICollectionViewScrollPositionCenteredVertically animated:YES];
+    [self.collectionView performBatchUpdates:^{
+        [self.collectionView reloadSections:[NSIndexSet indexSetWithIndex:indexPath.section]];
+    } completion:^(BOOL finished) {
+        [self.collectionView scrollToItemAtIndexPath:indexPath atScrollPosition:UICollectionViewScrollPositionCenteredVertically animated:YES];
+    }];
 }
 
 #pragma mark - WaterFallFlowLayoutDelegate
 
-- (CGFloat)layout:(WaterFallFlowLayout *)layout previousEdgeLengthForItemAtIndexPath:(NSIndexPath *)indexPath scrollDirection:(UICollectionViewScrollDirection)scrollDirection {
-    if (scrollDirection == UICollectionViewScrollDirectionVertical) {
-        return [TempCell cellSizeWithIsSelected:[self.previousSelectedIndexPathArr indexOfObject:indexPath] != NSNotFound offsetY:OffsetY].height;
-    }
-    
-    return 0;
+- (CGFloat)layout:(WaterFallFlowLayout *)layout previousHeightForItemAtIndexPath:(NSIndexPath *)indexPath scrollDirection:(UICollectionViewScrollDirection)scrollDirection {
+    return [TempCell cellSizeWithIsSelected:[self.previousSelectedIndexPathArr indexOfObject:indexPath] != NSNotFound offsetY:OffsetY].height;
 }
 
-- (CGFloat)layout:(WaterFallFlowLayout *)layout lastEdgeLengthForItemAtIndexPath:(NSIndexPath *)indexPath scrollDirection:(UICollectionViewScrollDirection)scrollDirection {
-    if (scrollDirection == UICollectionViewScrollDirectionVertical) {
-        return [TempCell cellSizeWithIsSelected:[self.lastSelectedIndexPathArr indexOfObject:indexPath] != NSNotFound offsetY:OffsetY].height;
-    }
-    
-    return 0;
+- (CGFloat)layout:(WaterFallFlowLayout *)layout lastHeightForItemAtIndexPath:(NSIndexPath *)indexPath scrollDirection:(UICollectionViewScrollDirection)scrollDirection {
+    return [TempCell cellSizeWithIsSelected:[self.lastSelectedIndexPathArr indexOfObject:indexPath] != NSNotFound offsetY:OffsetY].height;
 }
 
 @end

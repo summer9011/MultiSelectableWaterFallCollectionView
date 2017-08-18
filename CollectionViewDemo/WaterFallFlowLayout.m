@@ -19,12 +19,21 @@
 
 @implementation WaterFallFlowLayout
 
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        self.scrollDirection = UICollectionViewScrollDirectionVertical;
+        self.itemPadding = 0;
+        self.numberInRow = 1;
+    }
+    
+    return self;
+}
+
 #pragma mark - Override
 
 - (void)prepareLayout {
     [super prepareLayout];
-    
-    NSLog(@"prepareLayout");
     
     self.sectionHeaderLastAttrDic = [NSMutableDictionary dictionary];
     self.sectionFooterLastAttrDic = [NSMutableDictionary dictionary];
@@ -48,24 +57,20 @@
 }
 
 - (CGSize)collectionViewContentSize {
-    NSLog(@"collectionViewContentSize");
-    
     if ([self.collectionView numberOfSections] > 0) {
         NSUInteger itemCount = 0;
         for (NSInteger section = 0; section < [self.collectionView numberOfSections]; section ++) {
             itemCount += [self.collectionView numberOfItemsInSection:section];
         }
+        
         if (itemCount > 0) {
             CGSize contentSize = CGSizeZero;
-            if (self.scrollDirection == UICollectionViewScrollDirectionVertical) {
-                contentSize.width = CGRectGetWidth(self.collectionView.frame);
-            } else {
-                contentSize.height = CGRectGetHeight(self.collectionView.frame);
-            }
+            contentSize.width = CGRectGetWidth(self.collectionView.frame);
             
             for (NSInteger section = 0; section < [self.collectionView numberOfSections]; section ++) {
                 NSIndexPath *sectionPath = [NSIndexPath indexPathWithIndex:section];
                 
+                //Header
                 CGSize sectionHeaderSize = CGSizeZero;
                 if (self.sectionHeaderLastAttrDic[sectionPath]) {
                     UICollectionViewLayoutAttributes *attr = self.sectionHeaderLastAttrDic[sectionPath];
@@ -73,16 +78,12 @@
                 } else {
                     sectionHeaderSize = [self sectionHeaderSizeWithSection:section];
                 }
+                contentSize.height += sectionHeaderSize.height;
                 
-                if (self.scrollDirection == UICollectionViewScrollDirectionVertical) {
-                    contentSize.height += sectionHeaderSize.height;
-                } else {
-                    contentSize.width += sectionHeaderSize.width;
-                }
-                
-                NSMutableArray<NSNumber *> *rowLengthArr = [NSMutableArray array];
+                //Cell
+                NSMutableArray<NSNumber *> *rowHeightArr = [NSMutableArray array];
                 for (NSInteger row = 0; row < self.numberInRow; row ++) {
-                    [rowLengthArr addObject:@(self.itemPadding)];
+                    [rowHeightArr addObject:@(self.itemPadding)];
                 }
                 
                 for (NSInteger item = 0; item < [self.collectionView numberOfItemsInSection:section]; item ++) {
@@ -91,18 +92,14 @@
                     NSIndexPath *indexPath = [NSIndexPath indexPathForItem:item inSection:section];
                     UICollectionViewLayoutAttributes *attr = self.cellLastAttrDic[indexPath];
                     
-                    CGFloat rowLength = [rowLengthArr[postion] integerValue];
-                    rowLength += (CGRectGetHeight(attr.frame) + self.itemPadding);
-                    [rowLengthArr replaceObjectAtIndex:postion withObject:@(rowLength)];
+                    CGFloat rowHeight = [rowHeightArr[postion] integerValue];
+                    rowHeight += (CGRectGetHeight(attr.frame) + self.itemPadding);
+                    [rowHeightArr replaceObjectAtIndex:postion withObject:@(rowHeight)];
                 }
                 
-                CGFloat maxLength = [[rowLengthArr valueForKeyPath:@"@max.floatValue"] floatValue];
-                if (self.scrollDirection == UICollectionViewScrollDirectionVertical) {
-                    contentSize.height += maxLength;
-                } else {
-                    contentSize.width += maxLength;
-                }
+                contentSize.height += [[rowHeightArr valueForKeyPath:@"@max.floatValue"] floatValue];
                 
+                //Footer
                 CGSize sectionFooterSize = CGSizeZero;
                 if (self.sectionFooterLastAttrDic[sectionPath]) {
                     UICollectionViewLayoutAttributes *attr = self.sectionFooterLastAttrDic[sectionPath];
@@ -110,12 +107,7 @@
                 } else {
                     sectionFooterSize = [self sectionFooterSizeWithSection:section];
                 }
-                
-                if (self.scrollDirection == UICollectionViewScrollDirectionVertical) {
-                    contentSize.height += sectionFooterSize.height;
-                } else {
-                    contentSize.width += sectionFooterSize.width;
-                }
+                contentSize.height += sectionFooterSize.height;
             }
             
             return contentSize;
@@ -208,51 +200,39 @@
 
 - (CGRect)cellFrameWithIndexPath:(NSIndexPath *)indexPath isLast:(BOOL)isLast {
     CGRect itemFrame = CGRectZero;
-    if (self.scrollDirection == UICollectionViewScrollDirectionVertical) {
-        itemFrame.size.width = floorf((CGRectGetWidth(self.collectionView.frame) - self.itemPadding * (self.numberInRow + 1))/(CGFloat)self.numberInRow);
-    } else {
-        itemFrame.size.height = floorf((CGRectGetHeight(self.collectionView.frame) - self.itemPadding * (self.numberInRow + 1))/(CGFloat)self.numberInRow);
-    }
+    itemFrame.size.width = floorf((CGRectGetWidth(self.collectionView.frame) - self.itemPadding * (self.numberInRow + 1))/(CGFloat)self.numberInRow);
     
     for (NSInteger section = 0; section < [self.collectionView numberOfSections]; section ++) {
+        //Header
         CGSize sectionHeaderSize = [self sectionHeaderSizeWithSection:section];
-        if (self.scrollDirection == UICollectionViewScrollDirectionVertical) {
-            itemFrame.origin.y += sectionHeaderSize.height;
-        } else {
-            itemFrame.origin.x += sectionHeaderSize.width;
-        }
+        itemFrame.origin.y += sectionHeaderSize.height;
         
-        NSMutableArray<NSNumber *> *rowOffsetArr = [NSMutableArray array];
+        //Cell
+        NSMutableArray<NSNumber *> *rowOffsetYArr = [NSMutableArray array];
         for (NSInteger row = 0; row < self.numberInRow; row ++) {
-            [rowOffsetArr addObject:@(self.itemPadding)];
+            [rowOffsetYArr addObject:@(self.itemPadding)];
         }
         
         for (NSInteger item = 0; item < [self.collectionView numberOfItemsInSection:section]; item ++) {
             NSUInteger postion = item%self.numberInRow;
             
             NSIndexPath *tmpIndexPath = [NSIndexPath indexPathForItem:item inSection:section];
-            CGFloat edgeLength = 0;
+            CGFloat height = 0;
             if (isLast) {
-                edgeLength = [self.delegate layout:self lastEdgeLengthForItemAtIndexPath:tmpIndexPath scrollDirection:self.scrollDirection];
+                height = [self.delegate layout:self lastHeightForItemAtIndexPath:tmpIndexPath scrollDirection:self.scrollDirection];
             } else {
-                edgeLength = [self.delegate layout:self previousEdgeLengthForItemAtIndexPath:tmpIndexPath scrollDirection:self.scrollDirection];
+                height = [self.delegate layout:self previousHeightForItemAtIndexPath:tmpIndexPath scrollDirection:self.scrollDirection];
             }
             
-            CGFloat rowOffset = [rowOffsetArr[postion] integerValue];
-            if (item < indexPath.item) {
-                rowOffset += (edgeLength + self.itemPadding);
-                [rowOffsetArr replaceObjectAtIndex:postion withObject:@(rowOffset)];
+            CGFloat rowOffsetY = [rowOffsetYArr[postion] integerValue];
+            if (section < indexPath.section || item < indexPath.item) {
+                rowOffsetY += (height + self.itemPadding);
+                [rowOffsetYArr replaceObjectAtIndex:postion withObject:@(rowOffsetY)];
                 
             } else if (item == indexPath.item) {
-                if (self.scrollDirection == UICollectionViewScrollDirectionVertical) {
-                    itemFrame.origin.x = self.itemPadding + (itemFrame.size.width + self.itemPadding) * postion;
-                    itemFrame.origin.y += rowOffset;
-                    itemFrame.size.height = edgeLength;
-                } else {
-                    itemFrame.origin.x += rowOffset;
-                    itemFrame.origin.y = self.itemPadding + (itemFrame.size.height + self.itemPadding) * postion;
-                    itemFrame.size.width = edgeLength;
-                }
+                itemFrame.origin.x = self.itemPadding + (itemFrame.size.width + self.itemPadding) * postion;
+                itemFrame.origin.y += rowOffsetY;
+                itemFrame.size.height = height;
                 
                 break;
             }
@@ -262,19 +242,11 @@
             break;
         }
         
-        CGFloat maxLength = [[rowOffsetArr valueForKeyPath:@"@max.floatValue"] floatValue];
-        if (self.scrollDirection == UICollectionViewScrollDirectionVertical) {
-            itemFrame.origin.y += maxLength;
-        } else {
-            itemFrame.origin.x += maxLength;
-        }
+        itemFrame.origin.y += [[rowOffsetYArr valueForKeyPath:@"@max.floatValue"] floatValue];
         
+        //Footer
         CGSize sectionFooterSize = [self sectionFooterSizeWithSection:section];
-        if (self.scrollDirection == UICollectionViewScrollDirectionVertical) {
-            itemFrame.origin.y += sectionFooterSize.height;
-        } else {
-            itemFrame.origin.x += sectionFooterSize.width;
-        }
+        itemFrame.origin.y += sectionFooterSize.height;
     }
     
     return itemFrame;
@@ -308,14 +280,52 @@
 
 - (CGRect)sectionFrameWithSupplementaryViewOfKind:(NSString *)elementKind indexPath:(NSIndexPath *)indexPath isLast:(BOOL)isLast {
     if ([elementKind isEqualToString:UICollectionElementKindSectionHeader]) {
-        CGSize size = [self sectionHeaderSizeWithSection:indexPath.section];
+        CGRect frame = CGRectZero;
+        frame.size = [self sectionHeaderSizeWithSection:indexPath.section];
+        frame.origin.x = 0;
         
-        return CGRectMake(0, 0, size.width, size.height);
+        if (indexPath.section == 0) {
+            frame.origin.y = 0;
+        } else {
+            NSUInteger prevSection = indexPath.section - 1;
+            NSIndexPath *prevSectionPath = [NSIndexPath indexPathWithIndex:prevSection];
+            
+            CGRect prevSectionFooterFrame = [self sectionFrameWithSupplementaryViewOfKind:UICollectionElementKindSectionFooter indexPath:prevSectionPath isLast:isLast];
+            frame.origin.y += CGRectGetMaxY(prevSectionFooterFrame);
+        }
+        
+        return frame;
         
     } else if ([elementKind isEqualToString:UICollectionElementKindSectionFooter]) {
-        CGSize size = [self sectionFooterSizeWithSection:indexPath.section];
+        CGRect frame = CGRectZero;
+        frame.size = [self sectionFooterSizeWithSection:indexPath.section];
+        frame.origin.x = 0;
         
-        return CGRectMake(0, 0, size.width, size.height);
+        NSUInteger itemsCount = [self.collectionView numberOfItemsInSection:indexPath.section];
+        
+        if (itemsCount == 0) {
+            CGRect currentSectionHeaderFrame = [self sectionFrameWithSupplementaryViewOfKind:UICollectionElementKindSectionHeader indexPath:indexPath isLast:isLast];
+            frame.origin.y += (CGRectGetMaxY(currentSectionHeaderFrame) + self.itemPadding);
+            
+        } else {
+            NSInteger beginItemIndex = itemsCount - self.numberInRow;
+            if (beginItemIndex < 0) {
+                beginItemIndex = 0;
+            }
+            
+            NSMutableArray<NSNumber *> *lastItemsOffsetYArr = [NSMutableArray array];
+            
+            for (NSInteger item = beginItemIndex; item < itemsCount; item ++) {
+                NSIndexPath *cellIndexPath = [NSIndexPath indexPathForItem:item inSection:indexPath.section];
+                
+                CGRect itemFrame = [self cellFrameWithIndexPath:cellIndexPath isLast:isLast];
+                [lastItemsOffsetYArr addObject:@(CGRectGetMaxY(itemFrame))];
+            }
+            
+            frame.origin.y += ([[lastItemsOffsetYArr valueForKeyPath:@"@max.floatValue"] floatValue] + self.itemPadding);
+        }
+        
+        return frame;
     }
     
     return CGRectZero;

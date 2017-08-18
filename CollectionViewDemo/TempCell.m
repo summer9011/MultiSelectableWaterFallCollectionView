@@ -42,12 +42,13 @@ NSString *const TempCellIdentifier = @"TempCellIdentifier";
     }];
     
     self.firstLabel = [[UILabel alloc] initWithFrame:CGRectZero];
-    self.firstLabel.font = [UIFont systemFontOfSize:24];
+    self.firstLabel.font = [UIFont systemFontOfSize:20];
     self.firstLabel.adjustsFontSizeToFitWidth = YES;
     [self.firstView addSubview:self.firstLabel];
     
     [self.firstLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.top.leading.equalTo(self.firstView).offset(10);
+        make.trailing.equalTo(self.firstView).offset(-10);
     }];
     
     self.secondView = [[UIView alloc] initWithFrame:CGRectZero];
@@ -74,7 +75,7 @@ NSString *const TempCellIdentifier = @"TempCellIdentifier";
 - (void)setIndexPath:(NSIndexPath *)indexPath {
     _indexPath = indexPath;
     
-    self.firstLabel.text = [NSString stringWithFormat:@"%ld - %ld", indexPath.section, indexPath.item];
+    self.firstLabel.text = [NSString stringWithFormat:@"Cell {%ld-%ld}", indexPath.section, indexPath.item];
     self.secondLabel.text = [NSString stringWithFormat:@"%ld", indexPath.item];
 }
 
