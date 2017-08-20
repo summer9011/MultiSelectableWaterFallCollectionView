@@ -8,6 +8,15 @@
 
 #import <UIKit/UIKit.h>
 
+/**
+ WaterFallMode
+
+ - WaterFallModeNone: None
+ - WaterFallModeReload: Reload all data source, sections or items.
+ - WaterFallModeInsert: Insert a item.
+ - WaterFallModeDelete: Delete a item.
+ - WaterFallModeSelect: Select a item.
+ */
 typedef NS_ENUM(NSUInteger, WaterFallModeType) {
     WaterFallModeNone = 0,
     WaterFallModeReload = 1,
@@ -20,12 +29,46 @@ typedef NS_ENUM(NSUInteger, WaterFallModeType) {
 
 @protocol WaterFallFlowLayoutDelegate <NSObject>
 
+@optional
+
+/**
+ Return the mode type when the collection is inserting, deleting, selecting or reloading.
+
+ @param layout Layout
+ @return The mode
+ */
 - (WaterFallModeType)layoutOperationMode:(WaterFallFlowLayout *)layout;
 
+
+/**
+ Return which indexPah is changed during inserting or deleting.
+
+ @param layout Layout
+ @return The indexPath
+ */
 - (NSIndexPath *)layoutOperationIndexPath:(WaterFallFlowLayout *)layout;
 
+
+/**
+ Return the height when data source is in previous status.
+
+ @param layout Layout
+ @param indexPath indexPath
+ @param scrollDirection direction
+ @return The height
+ */
 - (CGFloat)layout:(WaterFallFlowLayout *)layout previousHeightForItemAtIndexPath:(NSIndexPath *)indexPath scrollDirection:(UICollectionViewScrollDirection)scrollDirection;
 
+@required
+
+/**
+ Return the height when data source is in current status.
+ 
+ @param layout Layout
+ @param indexPath indexPath
+ @param scrollDirection direction
+ @return The height
+ */
 - (CGFloat)layout:(WaterFallFlowLayout *)layout lastHeightForItemAtIndexPath:(NSIndexPath *)indexPath scrollDirection:(UICollectionViewScrollDirection)scrollDirection;
 
 @end
@@ -34,7 +77,14 @@ typedef NS_ENUM(NSUInteger, WaterFallModeType) {
 
 @property (nonatomic, weak) id<WaterFallFlowLayoutDelegate> delegate;
 
+/**
+ Item padding.
+ */
 @property (nonatomic, assign) CGFloat itemPadding;
+
+/**
+ The count in a row.
+ */
 @property (nonatomic, assign) NSUInteger numberInRow;
 
 @end

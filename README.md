@@ -3,7 +3,7 @@
 ## What's that?
   This demo is a custom waterfall layout, support multiple selection, support insert/delete one item in a section, animation during selection process, and also support to display supplementary view.
   Only support scroll in vertical direction.
-#### The demo help you to understand clearly when using waterfall layout.
+#### The demo help you to understand clearly when using waterfall layout. This project use CocoaPods, so should to open the <code>.xcworkspace</code> to run it.
   
 ## How to integrate it?
   Download or git clone it, add <code>WaterFallFlowLayout.h</code> and <code>WaterFallFlowLayout.m</code> files into your project.

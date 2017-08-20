@@ -49,9 +49,11 @@
     self.previousSelectedIndexPathArr = [NSMutableArray array];
     self.lastSelectedIndexPathArr = [NSMutableArray array];
     
+    //Define 5 sections in the colleciton view, 7 items in a section.
     self.sectionNumber = 5;
     self.itemNumber = 7;
     
+    //Add data sources.
     self.dataArr = [NSMutableArray array];
     for (NSInteger section = 0; section < self.sectionNumber; section ++) {
         NSMutableArray<NSArray<UIColor *> *> *items = [NSMutableArray array];
@@ -69,6 +71,7 @@
 }
 
 - (void)configOperationView {
+    //Add toobar.
     UIToolbar *toolbar = [[UIToolbar alloc] initWithFrame:CGRectZero];
     [self.view addSubview:toolbar];
     
@@ -97,8 +100,10 @@
 }
 
 - (void)configCollectionView {
+    //Set operation mode.
     self.operationMode = WaterFallModeNone;
     
+    //Init layout.
     WaterFallFlowLayout *flowLayout = [[WaterFallFlowLayout alloc] init];
     flowLayout.itemPadding = 4;
     flowLayout.numberInRow = 2;
@@ -106,6 +111,7 @@
     flowLayout.headerReferenceSize = CGSizeMake([UIScreen mainScreen].bounds.size.width, 100);
     flowLayout.footerReferenceSize = CGSizeMake([UIScreen mainScreen].bounds.size.width, 50);
     
+    //Init collection view.
     self.collectionView = [[UICollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:flowLayout];
     self.collectionView.backgroundColor = [UIColor lightGrayColor];
     self.collectionView.dataSource = self;
@@ -113,6 +119,7 @@
     self.collectionView.contentInset = UIEdgeInsetsMake(50, 0, 50, 0);
     [self.view addSubview:self.collectionView];
     
+    //Regist cell and supplementary view.
     [self.collectionView registerClass:[TempCell class] forCellWithReuseIdentifier:TempCellIdentifier];
     [self.collectionView registerClass:[TempSectionHeaderView class] forSupplementaryViewOfKind:UICollectionElementKindSectionHeader withReuseIdentifier:TempSectionHeaderIdentifier];
     [self.collectionView registerClass:[TempSectionFooterView class] forSupplementaryViewOfKind:UICollectionElementKindSectionFooter withReuseIdentifier:TempSectionFooterIdentifier];
