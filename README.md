@@ -1,5 +1,8 @@
 # MultiSelectableWaterFallCollectionView
 
+## Preview.
+  ![image](https://github.com/summer9011/MultiSelectableWaterFallCollectionView/blob/master/show.gif)
+
 ## What's that?
   This demo is a custom waterfall layout, support multiple selection, support insert/delete one item in a section, animation during selection process, and also support to display supplementary view.
   Only support scroll in vertical direction.
