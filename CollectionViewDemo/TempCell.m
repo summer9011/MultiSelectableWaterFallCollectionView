@@ -70,7 +70,41 @@ NSString *const TempCellIdentifier = @"TempCellIdentifier";
     }];
     
     [self.contentView bringSubviewToFront:self.firstView];
+    
+    UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(longPressOnView:)];
+    [self.firstView addGestureRecognizer:longPress];
 }
+
+#pragma Gesture
+
+- (void)longPressOnView:(UILongPressGestureRecognizer *)longPress {
+    switch (longPress.state) {
+        case UIGestureRecognizerStateBegan: {
+            UIAlertController *alertVC = [UIAlertController alertControllerWithTitle:@"Choose Operation" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
+            
+            UIAlertAction *insertAction = [UIAlertAction actionWithTitle:@"Insert" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                [self.delegate didCellSelectedInsert:self];
+            }];
+            
+            UIAlertAction *deleteAction = [UIAlertAction actionWithTitle:@"Delete" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                [self.delegate didCellSelectedDelete:self];
+            }];
+            
+            UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil];
+            
+            [alertVC addAction:insertAction];
+            [alertVC addAction:deleteAction];
+            [alertVC addAction:cancelAction];
+            
+            [self.bindVC presentViewController:alertVC animated:YES completion:nil];
+        }
+            break;
+        default:
+            break;
+    }
+}
+
+#pragma mark - Setting
 
 - (void)setIndexPath:(NSIndexPath *)indexPath {
     _indexPath = indexPath;
@@ -92,6 +126,8 @@ NSString *const TempCellIdentifier = @"TempCellIdentifier";
     self.secondView.backgroundColor = secondColor;
     self.firstLabel.textColor = secondColor;
 }
+
+#pragma mark - Static Method
 
 + (CGSize)firstViewSize {
     return CGSizeMake([UIScreen mainScreen].bounds.size.width, 120);

@@ -12,7 +12,7 @@
 
 #import "WaterFallFlowLayout.h"
 
-@interface ViewController () <UICollectionViewDataSource, UICollectionViewDelegate, WaterFallFlowLayoutDelegate>
+@interface ViewController () <UICollectionViewDataSource, UICollectionViewDelegate, WaterFallFlowLayoutDelegate, TempCellDelegate>
 
 @property (nonatomic, strong) UICollectionView *collectionView;
 @property (nonatomic, strong) WaterFallFlowLayout *flowLayout;
@@ -25,6 +25,9 @@
 @property (nonatomic, strong) NSMutableArray<NSIndexPath *> *lastSelectedIndexPathArr;
 
 @property (nonatomic, strong) UISegmentedControl *numberControl;
+
+@property (nonatomic, assign) WaterFallModeType operationMode;
+@property (nonatomic, copy) NSIndexPath *operationIndexPath;
 
 @end
 
@@ -94,6 +97,8 @@
 }
 
 - (void)configCollectionView {
+    self.operationMode = WaterFallModeNone;
+    
     WaterFallFlowLayout *flowLayout = [[WaterFallFlowLayout alloc] init];
     flowLayout.itemPadding = 4;
     flowLayout.numberInRow = 2;
@@ -134,9 +139,12 @@
     WaterFallFlowLayout *layout = (WaterFallFlowLayout *)self.collectionView.collectionViewLayout;
     layout.numberInRow = (control.selectedSegmentIndex + 1);
     
+    self.operationMode = WaterFallModeReload;
     [self.collectionView performBatchUpdates:^{
         [self.collectionView reloadData];
-    } completion:nil];
+    } completion:^(BOOL finished) {
+        self.operationMode = WaterFallModeNone;
+    }];
 }
 
 #pragma mark - UICollectionViewDataSource
@@ -151,6 +159,8 @@
 
 - (TempCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
     TempCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:TempCellIdentifier forIndexPath:indexPath];
+    cell.delegate = self;
+    cell.bindVC = self;
     
     NSArray<UIColor *> *colors = self.dataArr[indexPath.section][indexPath.item];
     cell.firstColor = colors[0];
@@ -197,14 +207,24 @@
         [self.lastSelectedIndexPathArr addObject:indexPath];
     }
     
+    self.operationMode = WaterFallModeSelect;
     [self.collectionView performBatchUpdates:^{
         [self.collectionView reloadSections:[NSIndexSet indexSetWithIndex:indexPath.section]];
     } completion:^(BOOL finished) {
+        self.operationMode = WaterFallModeNone;
         [self.collectionView scrollToItemAtIndexPath:indexPath atScrollPosition:UICollectionViewScrollPositionCenteredVertically animated:YES];
     }];
 }
 
 #pragma mark - WaterFallFlowLayoutDelegate
+
+- (WaterFallModeType)layoutOperationMode:(WaterFallFlowLayout *)layout {
+    return self.operationMode;
+}
+
+- (NSIndexPath *)layoutOperationIndexPath:(WaterFallFlowLayout *)layout {
+    return self.operationIndexPath;
+}
 
 - (CGFloat)layout:(WaterFallFlowLayout *)layout previousHeightForItemAtIndexPath:(NSIndexPath *)indexPath scrollDirection:(UICollectionViewScrollDirection)scrollDirection {
     return [TempCell cellSizeWithIsSelected:[self.previousSelectedIndexPathArr indexOfObject:indexPath] != NSNotFound offsetY:OffsetY].height;
@@ -212,6 +232,48 @@
 
 - (CGFloat)layout:(WaterFallFlowLayout *)layout lastHeightForItemAtIndexPath:(NSIndexPath *)indexPath scrollDirection:(UICollectionViewScrollDirection)scrollDirection {
     return [TempCell cellSizeWithIsSelected:[self.lastSelectedIndexPathArr indexOfObject:indexPath] != NSNotFound offsetY:OffsetY].height;
+}
+
+#pragma mark - TempCellDelegate
+
+- (void)didCellSelectedInsert:(TempCell *)cell {
+    NSIndexPath *indexPath = [self.collectionView indexPathForCell:cell];
+    
+    NSArray *colors = @[
+                        [UIColor blueColor],
+                        [UIColor brownColor]
+                        ];
+    [self.dataArr[indexPath.section] insertObject:colors atIndex:indexPath.item];
+    
+    self.operationMode = WaterFallModeInsert;
+    self.operationIndexPath = indexPath;
+    
+    [self.collectionView performBatchUpdates:^{
+        [self.collectionView insertItemsAtIndexPaths:@[indexPath]];
+    } completion:^(BOOL finished) {
+        self.operationMode = WaterFallModeNone;
+        self.operationIndexPath = nil;
+        
+        [self.collectionView scrollToItemAtIndexPath:indexPath atScrollPosition:UICollectionViewScrollPositionCenteredVertically animated:YES];
+    }];
+}
+
+- (void)didCellSelectedDelete:(TempCell *)cell {
+    NSIndexPath *indexPath = [self.collectionView indexPathForCell:cell];
+    
+    [self.dataArr[indexPath.section] removeObjectAtIndex:indexPath.item];
+    [self.previousSelectedIndexPathArr removeObject:indexPath];
+    [self.lastSelectedIndexPathArr removeObject:indexPath];
+    
+    self.operationMode = WaterFallModeDelete;
+    self.operationIndexPath = indexPath;
+    
+    [self.collectionView performBatchUpdates:^{
+        [self.collectionView deleteItemsAtIndexPaths:@[indexPath]];
+    } completion:^(BOOL finished) {
+        self.operationMode = WaterFallModeNone;
+        self.operationIndexPath = nil;
+    }];
 }
 
 @end

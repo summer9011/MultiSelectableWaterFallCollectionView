@@ -162,6 +162,15 @@
     return attr;
 }
 
+- (BOOL)shouldInvalidateLayoutForBoundsChange:(CGRect)newBounds {
+    CGRect oldBounds = self.collectionView.bounds;
+    if (!CGSizeEqualToSize(oldBounds.size, newBounds.size)) {
+        return YES;
+    }
+    
+    return NO;
+}
+
 - (void)finalizeCollectionViewUpdates {
     [UIView animateWithDuration:0.2 animations:^{
         [self.collectionView layoutIfNeeded];
@@ -170,8 +179,26 @@
 
 - (nullable UICollectionViewLayoutAttributes *)initialLayoutAttributesForAppearingItemAtIndexPath:(NSIndexPath *)itemIndexPath {
     UICollectionViewLayoutAttributes *attr = [super initialLayoutAttributesForAppearingItemAtIndexPath:itemIndexPath];
-    attr.alpha = 1.f;
-    attr.frame = [self cellFrameWithIndexPath:itemIndexPath isLast:NO];
+    
+    switch ([self.delegate layoutOperationMode:self]) {
+        case WaterFallModeReload: {
+            return self.cellLastAttrDic[itemIndexPath];
+        }
+            break;
+        case WaterFallModeSelect: {
+            attr.alpha = 1.f;
+            attr.frame = [self cellFrameWithIndexPath:itemIndexPath isLast:NO];
+        }
+            break;
+        case WaterFallModeInsert: {
+            NSIndexPath *insertIndexPath = [self.delegate layoutOperationIndexPath:self];
+            attr.alpha = [itemIndexPath isEqual:insertIndexPath]? 0.f:1.f;
+        }
+            break;
+        default:
+            break;
+    }
+    
     return attr;
 }
 

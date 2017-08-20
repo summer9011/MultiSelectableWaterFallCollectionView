@@ -13,7 +13,22 @@
 
 extern NSString *const TempCellIdentifier;
 
+@class TempCell;
+
+@protocol TempCellDelegate <NSObject>
+
+@required
+
+- (void)didCellSelectedInsert:(TempCell *)cell;
+
+- (void)didCellSelectedDelete:(TempCell *)cell;
+
+@end
+
 @interface TempCell : UICollectionViewCell
+
+@property (nonatomic, weak) id<TempCellDelegate> delegate;
+@property (nonatomic, weak) UIViewController *bindVC;
 
 @property (nonatomic, copy) NSIndexPath *indexPath;
 @property (nonatomic, copy) UIColor *firstColor;

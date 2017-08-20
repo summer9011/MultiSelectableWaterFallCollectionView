@@ -8,9 +8,21 @@
 
 #import <UIKit/UIKit.h>
 
+typedef NS_ENUM(NSUInteger, WaterFallModeType) {
+    WaterFallModeNone = 0,
+    WaterFallModeReload = 1,
+    WaterFallModeInsert = 2,
+    WaterFallModeDelete = 3,
+    WaterFallModeSelect = 4
+};
+
 @class WaterFallFlowLayout;
 
 @protocol WaterFallFlowLayoutDelegate <NSObject>
+
+- (WaterFallModeType)layoutOperationMode:(WaterFallFlowLayout *)layout;
+
+- (NSIndexPath *)layoutOperationIndexPath:(WaterFallFlowLayout *)layout;
 
 - (CGFloat)layout:(WaterFallFlowLayout *)layout previousHeightForItemAtIndexPath:(NSIndexPath *)indexPath scrollDirection:(UICollectionViewScrollDirection)scrollDirection;
 
