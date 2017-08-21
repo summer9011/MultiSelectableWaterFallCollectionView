@@ -15,6 +15,11 @@
 
 @property (nonatomic, strong) NSMutableDictionary<NSIndexPath *, UICollectionViewLayoutAttributes *> *cellLastAttrDic;
 
+@property (nonatomic, strong) NSMutableArray<NSIndexPath *> *insertIndexPathArr;
+@property (nonatomic, strong) NSMutableArray<NSIndexPath *> *deleteIndexPathArr;
+
+@property (nonatomic, assign) UICollectionUpdateAction updateAction;
+
 @end
 
 @implementation WaterFallFlowLayout
@@ -171,6 +176,39 @@
     return NO;
 }
 
+- (void)prepareForCollectionViewUpdates:(NSArray<UICollectionViewUpdateItem *> *)updateItems {
+    self.insertIndexPathArr = [NSMutableArray array];
+    self.deleteIndexPathArr = [NSMutableArray array];
+    
+    for (UICollectionViewUpdateItem *item in updateItems) {
+        switch (item.updateAction) {
+            case UICollectionUpdateActionInsert: {
+                [self.insertIndexPathArr addObject:item.indexPathAfterUpdate];
+                self.updateAction = UICollectionUpdateActionInsert;
+            }
+                break;
+            case UICollectionUpdateActionDelete: {
+                [self.deleteIndexPathArr addObject:item.indexPathBeforeUpdate];
+                self.updateAction = UICollectionUpdateActionDelete;
+            }
+                break;
+            case UICollectionUpdateActionReload: {
+                self.updateAction = UICollectionUpdateActionReload;
+            }
+                break;
+            case UICollectionUpdateActionMove: {
+                self.updateAction = UICollectionUpdateActionMove;
+            }
+                break;
+            default: {
+                self.updateAction = UICollectionUpdateActionNone;
+            }
+                break;
+        }
+    }
+    
+}
+
 - (void)finalizeCollectionViewUpdates {
     [UIView animateWithDuration:0.2 animations:^{
         [self.collectionView layoutIfNeeded];
@@ -180,19 +218,24 @@
 - (nullable UICollectionViewLayoutAttributes *)initialLayoutAttributesForAppearingItemAtIndexPath:(NSIndexPath *)itemIndexPath {
     UICollectionViewLayoutAttributes *attr = [super initialLayoutAttributesForAppearingItemAtIndexPath:itemIndexPath];
     
-    switch ([self.delegate layoutOperationMode:self]) {
-        case WaterFallModeReload: {
+    switch (self.updateAction) {
+        case UICollectionUpdateActionInsert: {
+            if ([self.insertIndexPathArr containsObject:itemIndexPath]) {
+                attr.alpha = 0.f;
+                attr.transform = CGAffineTransformMakeScale(0.f, 0.f);
+            } else {
+                attr.alpha = 1.f;
+                attr.transform = CGAffineTransformMakeScale(1.f, 1.f);
+            }
+        }
+            break;
+        case UICollectionUpdateActionDelete: {
             return self.cellLastAttrDic[itemIndexPath];
         }
             break;
-        case WaterFallModeSelect: {
+        case UICollectionUpdateActionReload: {
             attr.alpha = 1.f;
             attr.frame = [self cellFrameWithIndexPath:itemIndexPath isLast:NO];
-        }
-            break;
-        case WaterFallModeInsert: {
-            NSIndexPath *insertIndexPath = [self.delegate layoutOperationIndexPath:self];
-            attr.alpha = [itemIndexPath isEqual:insertIndexPath]? 0.f:1.f;
         }
             break;
         default:

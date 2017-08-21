@@ -26,9 +26,6 @@
 
 @property (nonatomic, strong) UISegmentedControl *numberControl;
 
-@property (nonatomic, assign) WaterFallModeType operationMode;
-@property (nonatomic, copy) NSIndexPath *operationIndexPath;
-
 @end
 
 @implementation ViewController
@@ -100,9 +97,6 @@
 }
 
 - (void)configCollectionView {
-    //Set operation mode.
-    self.operationMode = WaterFallModeNone;
-    
     //Init layout.
     WaterFallFlowLayout *flowLayout = [[WaterFallFlowLayout alloc] init];
     flowLayout.itemPadding = 4;
@@ -143,15 +137,14 @@
 }
 
 - (void)numberSegmentChanged:(UISegmentedControl *)control {
-    WaterFallFlowLayout *layout = (WaterFallFlowLayout *)self.collectionView.collectionViewLayout;
-    layout.numberInRow = (control.selectedSegmentIndex + 1);
+    WaterFallFlowLayout *flowLayout = [[WaterFallFlowLayout alloc] init];
+    flowLayout.itemPadding = 4;
+    flowLayout.numberInRow = (control.selectedSegmentIndex + 1);
+    flowLayout.delegate = self;
+    flowLayout.headerReferenceSize = CGSizeMake([UIScreen mainScreen].bounds.size.width, 100);
+    flowLayout.footerReferenceSize = CGSizeMake([UIScreen mainScreen].bounds.size.width, 50);
     
-    self.operationMode = WaterFallModeReload;
-    [self.collectionView performBatchUpdates:^{
-        [self.collectionView reloadData];
-    } completion:^(BOOL finished) {
-        self.operationMode = WaterFallModeNone;
-    }];
+    [self.collectionView setCollectionViewLayout:flowLayout animated:YES];
 }
 
 #pragma mark - UICollectionViewDataSource
@@ -214,24 +207,14 @@
         [self.lastSelectedIndexPathArr addObject:indexPath];
     }
     
-    self.operationMode = WaterFallModeSelect;
     [self.collectionView performBatchUpdates:^{
         [self.collectionView reloadSections:[NSIndexSet indexSetWithIndex:indexPath.section]];
     } completion:^(BOOL finished) {
-        self.operationMode = WaterFallModeNone;
         [self.collectionView scrollToItemAtIndexPath:indexPath atScrollPosition:UICollectionViewScrollPositionCenteredVertically animated:YES];
     }];
 }
 
 #pragma mark - WaterFallFlowLayoutDelegate
-
-- (WaterFallModeType)layoutOperationMode:(WaterFallFlowLayout *)layout {
-    return self.operationMode;
-}
-
-- (NSIndexPath *)layoutOperationIndexPath:(WaterFallFlowLayout *)layout {
-    return self.operationIndexPath;
-}
 
 - (CGFloat)layout:(WaterFallFlowLayout *)layout previousHeightForItemAtIndexPath:(NSIndexPath *)indexPath scrollDirection:(UICollectionViewScrollDirection)scrollDirection {
     return [TempCell cellSizeWithIsSelected:[self.previousSelectedIndexPathArr indexOfObject:indexPath] != NSNotFound offsetY:OffsetY].height;
@@ -252,15 +235,11 @@
                         ];
     [self.dataArr[indexPath.section] insertObject:colors atIndex:indexPath.item];
     
-    self.operationMode = WaterFallModeInsert;
-    self.operationIndexPath = indexPath;
+    self.previousSelectedIndexPathArr = [self.lastSelectedIndexPathArr mutableCopy];
     
     [self.collectionView performBatchUpdates:^{
         [self.collectionView insertItemsAtIndexPaths:@[indexPath]];
     } completion:^(BOOL finished) {
-        self.operationMode = WaterFallModeNone;
-        self.operationIndexPath = nil;
-        
         [self.collectionView scrollToItemAtIndexPath:indexPath atScrollPosition:UICollectionViewScrollPositionCenteredVertically animated:YES];
     }];
 }
@@ -269,18 +248,13 @@
     NSIndexPath *indexPath = [self.collectionView indexPathForCell:cell];
     
     [self.dataArr[indexPath.section] removeObjectAtIndex:indexPath.item];
-    [self.previousSelectedIndexPathArr removeObject:indexPath];
-    [self.lastSelectedIndexPathArr removeObject:indexPath];
     
-    self.operationMode = WaterFallModeDelete;
-    self.operationIndexPath = indexPath;
+    self.previousSelectedIndexPathArr = [self.lastSelectedIndexPathArr mutableCopy];
+    [self.lastSelectedIndexPathArr removeObject:indexPath];
     
     [self.collectionView performBatchUpdates:^{
         [self.collectionView deleteItemsAtIndexPaths:@[indexPath]];
-    } completion:^(BOOL finished) {
-        self.operationMode = WaterFallModeNone;
-        self.operationIndexPath = nil;
-    }];
+    } completion:nil];
 }
 
 @end

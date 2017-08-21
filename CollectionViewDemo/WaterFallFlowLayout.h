@@ -29,25 +29,7 @@ typedef NS_ENUM(NSUInteger, WaterFallModeType) {
 
 @protocol WaterFallFlowLayoutDelegate <NSObject>
 
-@optional
-
-/**
- Return the mode type when the collection is inserting, deleting, selecting or reloading.
-
- @param layout Layout
- @return The mode
- */
-- (WaterFallModeType)layoutOperationMode:(WaterFallFlowLayout *)layout;
-
-
-/**
- Return which indexPah is changed during inserting or deleting.
-
- @param layout Layout
- @return The indexPath
- */
-- (NSIndexPath *)layoutOperationIndexPath:(WaterFallFlowLayout *)layout;
-
+@required
 
 /**
  Return the height when data source is in previous status.
@@ -58,8 +40,6 @@ typedef NS_ENUM(NSUInteger, WaterFallModeType) {
  @return The height
  */
 - (CGFloat)layout:(WaterFallFlowLayout *)layout previousHeightForItemAtIndexPath:(NSIndexPath *)indexPath scrollDirection:(UICollectionViewScrollDirection)scrollDirection;
-
-@required
 
 /**
  Return the height when data source is in current status.
